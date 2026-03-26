@@ -1,17 +1,19 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { ENV } from "@/lib/env";
+import { sanitizeRole } from "@/lib/role-routes";
 
 const AuthContext = createContext(undefined);
 
-// DEMO ACCOUNTS - Only available when explicitly enabled
-export const DEMO_ACCOUNTS = ENV.ENABLE_DEMO_MODE ? {
+// DEMO ACCOUNTS - Always available in DEV mode
+// No env flag needed — they only work with exact email+password match
+const DEMO_ACCOUNTS = {
     'admin@skinthelp.com': {
         password: 'admin123',
         profile: {
-            id: 'admin-001',
+            id: 'demo-admin-001',
             email: 'admin@skinthelp.com',
             name: 'Admin User',
             role: 'admin',
@@ -20,7 +22,7 @@ export const DEMO_ACCOUNTS = ENV.ENABLE_DEMO_MODE ? {
     'restaurant@skinthelp.com': {
         password: 'rest123',
         profile: {
-            id: 'rest-001',
+            id: 'demo-rest-001',
             email: 'restaurant@skinthelp.com',
             name: 'Restaurant Owner',
             role: 'restaurant',
@@ -30,7 +32,7 @@ export const DEMO_ACCOUNTS = ENV.ENABLE_DEMO_MODE ? {
     'worker@skinthelp.com': {
         password: 'worker123',
         profile: {
-            id: 'worker-001',
+            id: 'demo-worker-001',
             email: 'worker@skinthelp.com',
             name: 'Collection Worker',
             role: 'worker',
@@ -40,13 +42,13 @@ export const DEMO_ACCOUNTS = ENV.ENABLE_DEMO_MODE ? {
     'public@skinthelp.com': {
         password: 'public123',
         profile: {
-            id: 'public-001',
+            id: 'demo-public-001',
             email: 'public@skinthelp.com',
             name: 'Public User',
             role: 'public',
         }
     },
-} : {};
+};
 
 // Valid roles for OAuth/OTP role assignment
 const VALID_ROLES = ['admin', 'restaurant', 'worker', 'public'];
@@ -57,53 +59,112 @@ export function AuthProvider({ children }) {
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
     const [emailConfirmed, setEmailConfirmed] = useState(true);
+    // Track if we're in demo mode to prevent Supabase from overriding
+    const [isDemoMode, setIsDemoMode] = useState(false);
+    // Track sign-out in progress to prevent layouts from rendering stale state
+    const [isSigningOut, setIsSigningOut] = useState(false);
+    // Track if initial session check is complete
+    const [isSessionChecked, setIsSessionChecked] = useState(false);
 
     useEffect(() => {
         const abortController = new AbortController();
+        let isDemo = false;
 
-        // Check for demo mode session on mount
-        const demoMode = localStorage.getItem('demo_mode');
-        const demoProfile = localStorage.getItem('demo_profile');
-
-        if (demoMode === 'true' && demoProfile) {
+        const initializeAuth = async () => {
             try {
-                const profile = JSON.parse(demoProfile);
-                setProfile(profile);
-                setUser({
-                    id: profile.id,
-                    email: profile.email,
-                    user_metadata: { role: profile.role }
-                });
-                setLoading(false);
-                // Don't return early - continue to register auth listener
-            } catch (e) {
-                logger.error('Failed to restore demo session:', e);
-                localStorage.removeItem('demo_mode');
-                localStorage.removeItem('demo_profile');
-            }
-        }
+                // Check for demo mode session on mount
+                const demoMode = localStorage.getItem('demo_mode');
+                const demoProfile = localStorage.getItem('demo_profile');
 
-        // Check for existing session from Supabase
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+                if (demoMode === 'true' && demoProfile) {
+                    try {
+                        const parsed = JSON.parse(demoProfile);
+                        setProfile(parsed);
+                        setUser({
+                            id: parsed.id,
+                            email: parsed.email,
+                            user_metadata: { role: parsed.role }
+                        });
+                        setIsDemoMode(true);
+                        isDemo = true;
+                        setLoading(false);
+                        setIsSessionChecked(true);
+                        return;
+                    } catch (e) {
+                        logger.error('Failed to restore demo session:', e);
+                        localStorage.removeItem('demo_mode');
+                        localStorage.removeItem('demo_profile');
+                    }
+                }
+
+                // Check for existing Supabase session
+                try {
+                    const { data: { session: existingSession }, error } = await supabase.auth.getSession();
+                    if (error) {
+                        logger.error('Failed to fetch session:', error);
+                    }
+                    if (existingSession?.user) {
+                        setSession(existingSession);
+                        setUser(existingSession.user);
+                        await fetchProfile(existingSession.user);
+                        // fetchProfile now calls setLoading(false) internally,
+                        // but call it here too as a safety net
+                        setLoading(false);
+                    } else {
+                        setLoading(false);
+                    }
+                } catch (err) {
+                    logger.error('Session check error:', err);
+                    setLoading(false);
+                }
+                setIsSessionChecked(true);
+            } catch (error) {
+                logger.error('Auth initialization error:', error);
+                setLoading(false);
+                setIsSessionChecked(true);
+            }
+        };
+
+        initializeAuth();
+
+        // Register Supabase auth listener for ongoing changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
             if (abortController.signal.aborted) return;
 
-            logger.debug('Auth state changed:', event, session?.user?.email);
+            // CRITICAL: If we're in demo mode, ignore Supabase auth changes
+            // This prevents the existing Supabase session from overriding the demo profile
+            if (isDemo) {
+                logger.debug('Demo mode active, ignoring Supabase auth event:', event);
+                return;
+            }
 
-            setSession(session);
-            setUser(session?.user ?? null);
+            // If signing out, handle the SIGNED_OUT event but ignore others
+            if (event === 'SIGNED_OUT') {
+                setProfile(null);
+                setUser(null);
+                setSession(null);
+                setEmailConfirmed(true);
+                setLoading(false);
+                return;
+            }
 
-            if (session?.user) {
-                // Check email confirmation status
-                const isConfirmed = session.user.email_confirmed_at !== null;
+            logger.debug('Auth state changed:', event, currentSession?.user?.email);
+
+            setSession(currentSession);
+            setUser(currentSession?.user ?? null);
+
+            if (currentSession?.user) {
+                const isConfirmed = currentSession.user.email_confirmed_at !== null;
                 setEmailConfirmed(isConfirmed);
-
-                // Fetch profile
-                await fetchProfile(session.user);
+                await fetchProfile(currentSession.user);
+                // Safety net: ensure loading is cleared even if fetchProfile
+                // had an early return that didn't explicitly call setLoading(false)
+                setLoading(false);
             } else {
                 setProfile(null);
                 setEmailConfirmed(true);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
         return () => {
@@ -125,21 +186,21 @@ export function AuthProvider({ children }) {
                     id: currentUser.id,
                     email: currentUser.email,
                     name: metaName || currentUser.email?.split('@')[0],
-                    role: metaRole,
-                    // Add other fields if stored in metadata
+                    role: sanitizeRole(metaRole),
                 };
                 setProfile(userProfile);
+                // Store role in localStorage for persistence
+                localStorage.setItem('userRole', metaRole);
                 logger.debug('Profile set:', userProfile);
+                // ✅ FIXED: clear loading so routes/layouts stop spinning
+                setLoading(false);
                 return;
             }
 
             // If no role in metadata and this is a new user, retry a few times
-            // (metadata might not be immediately available)
             if (retryCount < 3) {
                 logger.debug(`No role found, retrying... (${retryCount + 1}/3)`);
                 await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Refresh user data
                 const { data: { user: refreshedUser } } = await supabase.auth.getUser();
                 if (refreshedUser) {
                     await fetchProfile(refreshedUser, retryCount + 1);
@@ -147,36 +208,52 @@ export function AuthProvider({ children }) {
                 }
             }
 
-            // If still no role after retries, default to 'public'
-            logger.debug('No role found after retries, defaulting to public');
+            // If still no role after retries, check localStorage for pending role
+            const pendingRole = localStorage.getItem('selectedRole') || localStorage.getItem('pendingRole') || localStorage.getItem('userRole');
+            const finalRole = sanitizeRole(pendingRole || 'public');
+
+            logger.debug('No role found after retries, using:', finalRole);
             const defaultProfile = {
                 id: currentUser.id,
                 email: currentUser.email,
                 name: currentUser.email?.split('@')[0],
-                role: 'public',
+                role: finalRole,
             };
             setProfile(defaultProfile);
+            // Store role in localStorage for persistence
+            localStorage.setItem('userRole', finalRole);
+
+            // Also update the user metadata so it persists
+            try {
+                await supabase.auth.updateUser({ data: { role: finalRole } });
+            } catch (e) {
+                logger.error('Failed to persist role to user metadata:', e);
+            }
+
+            // ✅ FIXED: ensure loading is cleared after fallback profile is set
+            setLoading(false);
 
         } catch (error) {
             console.error("Error fetching profile:", error);
-            // Set a default profile even on error with all required fields
+            const defaultRole = localStorage.getItem('userRole') || 'public';
             setProfile({
                 id: currentUser.id,
                 email: currentUser.email,
                 name: currentUser.email?.split('@')[0] || '',
-                role: 'public',
+                role: defaultRole,
             });
+            // ✅ FIXED: ensure loading clears even on error so UI doesn't hang
+            setLoading(false);
         }
     };
 
     const signIn = async (email, password) => {
         setLoading(true);
         try {
-            // Check for demo accounts FIRST (only in dev mode)
+            // Check for demo accounts FIRST (always in DEV mode)
             if (import.meta.env.DEV) {
                 const demoAccount = DEMO_ACCOUNTS[email.toLowerCase()];
                 if (demoAccount && demoAccount.password === password) {
-                    // Use demo login logic (mock)
                     const mockProfile = { ...demoAccount.profile };
                     setProfile(mockProfile);
                     setUser({
@@ -184,7 +261,7 @@ export function AuthProvider({ children }) {
                         email: mockProfile.email,
                         user_metadata: { role: mockProfile.role }
                     });
-                    // Persist demo session
+                    setIsDemoMode(true);
                     localStorage.setItem('demo_mode', 'true');
                     localStorage.setItem('demo_profile', JSON.stringify(mockProfile));
                     setLoading(false);
@@ -193,18 +270,40 @@ export function AuthProvider({ children }) {
             }
 
             // Normal Supabase Login
-            const { error } = await supabase.auth.signInWithPassword({
+            // First, get the selected role from localStorage (set during portal selection)
+            const selectedRole = localStorage.getItem('selectedRole');
+
+            const { error, data } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) throw error;
 
+            // If login succeeded and we have a selected role, update user metadata
+            // This ensures the Supabase session reflects the portal the user chose
+            if (selectedRole && data?.user) {
+                const currentRole = data.user.user_metadata?.role;
+                if (currentRole !== selectedRole) {
+                    logger.debug('Updating user role from', currentRole, 'to', selectedRole);
+                    await supabase.auth.updateUser({
+                        data: { role: selectedRole }
+                    });
+                }
+                // Also store the role in localStorage for persistence
+                localStorage.setItem('userRole', selectedRole);
+            }
+
+            // NOTE: Do NOT set loading=false here for Supabase login!
+            // The onAuthStateChange handler will set loading=false AFTER fetchProfile completes.
+            // Setting it here causes a race condition where the layout sees loading=false
+            // but profile is still null, causing an unwanted redirect.
+
         } catch (error) {
+            // Only set loading=false on error — success is handled by onAuthStateChange
+            setLoading(false);
             console.error('Sign in error:', error);
             throw new Error(error.message || 'Failed to sign in');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -218,7 +317,7 @@ export function AuthProvider({ children }) {
                     data: {
                         role: userData?.role || 'public',
                         name: userData?.name || email.split('@')[0],
-                        ...userData // store other custom data in metadata
+                        ...userData
                     },
                     emailRedirectTo: `${window.location.origin}/auth/callback`
                 }
@@ -226,9 +325,7 @@ export function AuthProvider({ children }) {
 
             if (error) throw error;
 
-            // Check if email confirmation is required
             if (data.user && !data.session) {
-                // Email confirmation required
                 setEmailConfirmed(false);
                 const error = new Error('Please check your email to confirm your account before signing in.');
                 error.code = 'EMAIL_CONFIRMATION_REQUIRED';
@@ -236,49 +333,67 @@ export function AuthProvider({ children }) {
             }
 
             if (data.user && data.session) {
-                // Auto-login successful (email confirmation disabled)
                 setEmailConfirmed(true);
-                // Profile update will be handled by onAuthStateChange
             }
 
         } catch (error) {
+            setLoading(false);
             console.error('Sign up error:', error);
             throw new Error(error.message || 'Failed to create account');
-        } finally {
-            setLoading(false);
         }
     };
 
     const signOut = async () => {
+        // Set signing-out flag FIRST so layouts know not to render stale UI
+        setIsSigningOut(true);
+
         try {
-            await supabase.auth.signOut();
+            // Clear demo mode first
+            setIsDemoMode(false);
+
+            // Clear state synchronously BEFORE async Supabase call
+            // This ensures React re-renders with null state immediately
+            setProfile(null);
+            setUser(null);
+            setSession(null);
+            setLoading(false);
+
+            // Sign out from Supabase (ignore errors if no real session)
+            try {
+                await supabase.auth.signOut();
+            } catch (e) {
+                logger.debug('Supabase signOut (may be expected in demo mode):', e);
+            }
 
             // Clear all auth-related storage
             localStorage.removeItem('demo_mode');
             localStorage.removeItem('demo_profile');
             localStorage.removeItem('selectedRole');
             localStorage.removeItem('pendingRole');
+            localStorage.removeItem('userRole');
 
-            // Clear state
+            // Also clear any supabase-related keys from localStorage
+            const supabaseKeys = Object.keys(localStorage).filter(
+                key => key.startsWith('sb-') || key.startsWith('supabase.')
+            );
+            supabaseKeys.forEach(key => localStorage.removeItem(key));
+
+        } catch (error) {
+            console.error('Sign out error:', error);
+            // Still clear state even on error so the user isn't stuck
             setProfile(null);
             setUser(null);
             setSession(null);
             setLoading(false);
-
-            // Navigation will be handled by the calling component
-            // This prevents breaking browser history
-        } catch (error) {
-            console.error('Sign out error:', error);
-            setLoading(false);
             throw new Error('Failed to sign out');
+        } finally {
+            setIsSigningOut(false);
         }
     };
 
     const signInWithGoogle = async () => {
         try {
             const selectedRole = localStorage.getItem('selectedRole') || 'public';
-
-            // Validate role against allowlist to prevent tampering
             const validatedRole = VALID_ROLES.includes(selectedRole) ? selectedRole : 'public';
 
             const { error } = await supabase.auth.signInWithOAuth({
@@ -294,7 +409,6 @@ export function AuthProvider({ children }) {
 
             if (error) throw error;
 
-            // Store validated role for callback to use
             localStorage.setItem('pendingRole', validatedRole);
         } catch (error) {
             console.error('Google sign in error:', error);
@@ -304,10 +418,7 @@ export function AuthProvider({ children }) {
 
     const signInWithPhone = async (phone) => {
         try {
-            const { error } = await supabase.auth.signInWithOtp({
-                phone,
-            });
-
+            const { error } = await supabase.auth.signInWithOtp({ phone });
             if (error) throw error;
             toast.success('OTP sent to your phone!');
         } catch (error) {
@@ -319,19 +430,14 @@ export function AuthProvider({ children }) {
     const verifyOTP = async (phone, otp) => {
         try {
             const selectedRole = localStorage.getItem('selectedRole') || 'public';
-
-            // Validate role against allowlist
             const validatedRole = VALID_ROLES.includes(selectedRole) ? selectedRole : 'public';
 
             const { error: verifyError } = await supabase.auth.verifyOtp({
-                phone,
-                token: otp,
-                type: 'sms',
+                phone, token: otp, type: 'sms',
             });
 
             if (verifyError) throw verifyError;
 
-            // Update user metadata with validated role
             const { error: updateError } = await supabase.auth.updateUser({
                 data: { role: validatedRole }
             });
@@ -352,18 +458,12 @@ export function AuthProvider({ children }) {
         if (!user) throw new Error('No user logged in');
 
         try {
-            // Update Supabase user metadata
-            const { error } = await supabase.auth.updateUser({
-                data: data
-            });
-
+            const { error } = await supabase.auth.updateUser({ data });
             if (error) throw error;
 
-            // Update local state
             if (profile) {
                 setProfile({ ...profile, ...data });
             }
-
         } catch (error) {
             console.error('Update profile error:', error);
             throw new Error('Failed to update profile');
@@ -377,6 +477,9 @@ export function AuthProvider({ children }) {
             session,
             loading,
             emailConfirmed,
+            isDemoMode,
+            isSigningOut,
+            isSessionChecked,
             signIn,
             signUp,
             signInWithGoogle,
@@ -397,3 +500,6 @@ export const useAuth = () => {
     }
     return context;
 };
+
+// Re-export for backward compatibility
+export { DEMO_ACCOUNTS };

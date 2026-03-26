@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Quotes, Star, UsersThree } from "@phosphor-icons/react";
+import { Meteors } from '@/components/ui/meteors';
 
 export function TestimonialsSection() {
     const testimonials = [
@@ -106,6 +107,7 @@ function TestimonialCard({ testimonial, delay }) {
             transition={{ duration: 0.5, delay }}
             whileHover={{ y: -5 }}
             className="depth-card p-6 group relative overflow-hidden"
+            style={{ isolation: 'isolate' }}
         >
             {/* Quote Icon Background */}
             <div className="absolute top-4 right-4 opacity-10">
@@ -148,6 +150,7 @@ function TestimonialCard({ testimonial, delay }) {
             <motion.div
                 className={`absolute inset-0 bg-gradient-to-br ${testimonial.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
             />
+            <Meteors number={8} />
         </motion.div>
     );
 }

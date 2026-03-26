@@ -37,8 +37,11 @@ export default function Auth() {
                     await signUp(email, password, { role: selectedPortal || 'public' });
                     // If we get here, signup was successful and email confirmation is disabled
                     toast.success('Account created successfully! You can now sign in.');
-                    setIsSignUp(false);
-                    setPassword(''); // Clear password for security
+                    setTimeout(() => {
+                        setIsSignUp(false);
+                        setEmail('');
+                        setPassword('');
+                    }, 1000);
                 } catch (signupError) {
                     // Check if it's an email confirmation error using stable code
                     if (signupError.code === 'EMAIL_CONFIRMATION_REQUIRED') {
@@ -53,11 +56,21 @@ export default function Auth() {
             } else {
                 await signIn(email, password);
                 toast.success('Welcome back!');
-                // Navigation will be handled by AuthContext
+                // Navigate to role-specific dashboard
+                setTimeout(() => {
+                    const roleRoutes = {
+                        'admin': '/owner/dashboard',
+                        'restaurant': '/restaurant/dashboard',
+                        'worker': '/worker/dashboard',
+                        'public': '/customer/dashboard'
+                    };
+                    const finalRole = selectedPortal === 'owner' ? 'admin' : selectedPortal;
+                    const redirectPath = roleRoutes[finalRole] || '/';
+                    navigate(redirectPath);
+                }, 500);
             }
         } catch (error) {
             toast.error(error.message || 'Authentication failed');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -71,9 +84,20 @@ export default function Auth() {
         try {
             await signIn(demoEmail, demoPassword);
             toast.success('Demo login successful!');
+            // Navigate to role-specific dashboard
+            setTimeout(() => {
+                const roleRoutes = {
+                    'admin': '/owner/dashboard',
+                    'restaurant': '/restaurant/dashboard',
+                    'worker': '/worker/dashboard',
+                    'public': '/customer/dashboard'
+                };
+                const finalRole = selectedPortal === 'owner' ? 'admin' : selectedPortal;
+                const redirectPath = roleRoutes[finalRole] || '/';
+                navigate(redirectPath);
+            }, 500);
         } catch (error) {
             toast.error(error.message || 'Demo login failed');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -125,17 +149,31 @@ export default function Auth() {
     ];
 
     const handlePortalSelect = (portalId) => {
+        if (!portalId) {
+            toast.error('Invalid portal selected');
+            return;
+        }
         setSelectedPortal(portalId);
-        // Optional: Update URL without navigation to keep state in sync
-        // navigate(`/portal/${portalId}/login`, { replace: true });
     };
 
     const handleBackToPortals = () => {
         setSelectedPortal(null);
-        navigate('/auth');
     };
 
     const currentPortal = portals.find(p => p.id === (selectedPortal === 'owner' ? 'admin' : selectedPortal));
+
+    if (selectedPortal && !currentPortal) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-white mb-4">Portal Not Found</h2>
+                    <Button onClick={() => setSelectedPortal(null)} className="bg-white/10 hover:bg-white/20">
+                        Back to Portal Selection
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0a]">

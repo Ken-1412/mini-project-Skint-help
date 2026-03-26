@@ -1,9 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Utensils, Users as UsersIcon, MapPin, ArrowRight, Home } from 'lucide-react';
 
 export default function SelectRole() {
     const navigate = useNavigate();
+
+    const particlePositions = useMemo(() =>
+        [...Array(8)].map(() => ({
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            duration: 3 + Math.random() * 2,
+            delay: Math.random() * 2,
+        })),
+    []);
 
     const portals = [
         {
@@ -51,23 +61,20 @@ export default function SelectRole() {
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0a] noise-overlay">
             {/* Animated background particles */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(8)].map((_, i) => (
+                {particlePositions.map((pos, i) => (
                     <motion.div
                         key={i}
                         className="absolute w-2 h-2 rounded-full bg-white/10"
-                        style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                        }}
+                        style={{ left: pos.left, top: pos.top }}
                         animate={{
                             y: [0, -30, 0],
                             opacity: [0.1, 0.3, 0.1],
                             scale: [1, 1.5, 1],
                         }}
                         transition={{
-                            duration: 3 + Math.random() * 2,
+                            duration: pos.duration,
                             repeat: Infinity,
-                            delay: Math.random() * 2,
+                            delay: pos.delay,
                         }}
                     />
                 ))}

@@ -9,20 +9,21 @@ export function Footer() {
         product: [
             { name: 'How It Works', path: '/how-it-works' },
             { name: 'Impact', path: '/impact' },
+            { name: 'Food Map', path: '/food-map' },
             { name: 'Join Us', path: '/join-us' },
             { name: 'Contact', path: '/contact' },
         ],
         company: [
-            { name: 'About Us', path: '/about' },
-            { name: 'Our Team', path: '/team' },
-            { name: 'Careers', path: '/careers' },
-            { name: 'Press', path: '/press' },
+            { name: 'About Us' },
+            { name: 'Our Team' },
+            { name: 'Careers' },
+            { name: 'Press' },
         ],
         resources: [
-            { name: 'Blog', path: '/blog' },
-            { name: 'Help Center', path: '/help' },
-            { name: 'Privacy Policy', path: '/privacy' },
-            { name: 'Terms of Service', path: '/terms' },
+            { name: 'Blog' },
+            { name: 'Help Center' },
+            { name: 'Privacy Policy' },
+            { name: 'Terms of Service' },
         ],
     };
 
@@ -64,17 +65,17 @@ export function Footer() {
 
                             {/* Contact Info */}
                             <div className="space-y-3">
-                                <a href="mailto:arpitsaraswat80@gmail.com" className="flex items-center gap-3 text-sm text-white hover:text-white/80 transition-colors group">
+                                <a href="mailto:ketansingh07510@gmail.com" className="flex items-center gap-3 text-sm text-white hover:text-white/80 transition-colors group">
                                     <div className="w-8 h-8 rounded-lg glass-card flex items-center justify-center group-hover:neon-glow transition-all">
                                         <EnvelopeSimple className="w-4 h-4 text-white" />
                                     </div>
-                                    arpitsaraswat80@gmail.com
+                                    ketansingh07510@gmail.com
                                 </a>
-                                <a href="tel:+917668703965" className="flex items-center gap-3 text-sm text-white hover:text-white/80 transition-colors group">
+                                <a href="tel:+917355434067" className="flex items-center gap-3 text-sm text-white hover:text-white/80 transition-colors group">
                                     <div className="w-8 h-8 rounded-lg glass-card flex items-center justify-center group-hover:neon-glow transition-all">
                                         <Phone className="w-4 h-4 text-white" />
                                     </div>
-                                    +91 7668703965
+                                    +91 7355434067
                                 </a>
                                 <div className="flex items-center gap-3 text-sm text-white">
                                     <div className="w-8 h-8 rounded-lg glass-card flex items-center justify-center">
@@ -90,7 +91,7 @@ export function Footer() {
                             <h3 className="font-semibold mb-4 text-white">Product</h3>
                             <ul className="space-y-2">
                                 {footerLinks.product.map((link) => (
-                                    <li key={link.path}>
+                                    <li key={link.name}>
                                         <Link
                                             to={link.path}
                                             className="text-sm text-white hover:text-white/80 hover:translate-x-1 inline-block transition-all"
@@ -106,13 +107,10 @@ export function Footer() {
                             <h3 className="font-semibold mb-4 text-white">Company</h3>
                             <ul className="space-y-2">
                                 {footerLinks.company.map((link) => (
-                                    <li key={link.path}>
-                                        <Link
-                                            to={link.path}
-                                            className="text-sm text-white hover:text-white/80 hover:translate-x-1 inline-block transition-all"
-                                        >
+                                    <li key={link.name}>
+                                        <span className="text-sm text-white/40 cursor-default">
                                             {link.name}
-                                        </Link>
+                                        </span>
                                     </li>
                                 ))}
                             </ul>
@@ -122,13 +120,10 @@ export function Footer() {
                             <h3 className="font-semibold mb-4 text-white">Resources</h3>
                             <ul className="space-y-2">
                                 {footerLinks.resources.map((link) => (
-                                    <li key={link.path}>
-                                        <Link
-                                            to={link.path}
-                                            className="text-sm text-white hover:text-white/80 hover:translate-x-1 inline-block transition-all"
-                                        >
+                                    <li key={link.name}>
+                                        <span className="text-sm text-white/40 cursor-default">
                                             {link.name}
-                                        </Link>
+                                        </span>
                                     </li>
                                 ))}
                             </ul>

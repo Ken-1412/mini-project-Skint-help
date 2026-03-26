@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { getDashboardForRole } from '@/lib/role-routes';
 
 export default function AuthCallback() {
     const navigate = useNavigate();
@@ -69,6 +70,7 @@ export default function AuthCallback() {
                 let retryCount = 0;
                 const maxRetries = 5;
 
+                // Declare userRole before the loop to avoid TDZ (Temporal Dead Zone)
                 while (!userRole && retryCount < maxRetries) {
                     setStatus(`Loading profile... (${retryCount + 1}/${maxRetries})`);
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -101,23 +103,8 @@ export default function AuthCallback() {
                 setStatus('Redirecting to your dashboard...');
                 toast.success('Successfully signed in!');
 
-                // Redirect based on role
-                switch (finalRole) {
-                    case 'admin':
-                        navigate('/owner/dashboard', { replace: true });
-                        break;
-                    case 'restaurant':
-                        navigate('/restaurant/dashboard', { replace: true });
-                        break;
-                    case 'worker':
-                        navigate('/worker/dashboard', { replace: true });
-                        break;
-                    case 'public':
-                    case 'customer':
-                    default:
-                        navigate('/customer/dashboard', { replace: true });
-                        break;
-                }
+                // Redirect based on role using centralized mapping
+                navigate(getDashboardForRole(finalRole), { replace: true });
             } catch (error) {
                 console.error('Auth callback error:', error);
                 toast.error(error.message || 'Sign in failed. Please try again.');

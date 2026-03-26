@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ForkKnife, MapPin, UsersThree, TrendUp, ArrowRight, CheckCircle } from "@phosphor-icons/react";
+import { Meteors } from '@/components/ui/meteors';
 
 export function HowItWorks() {
     const steps = [
@@ -128,9 +129,9 @@ export function HowItWorks() {
 
 function StepCard({ icon, title, description, color, features, number }) {
     return (
-        <div className="depth-card p-6 h-full relative group overflow-visible">
+        <div className="depth-card p-6 h-full relative group overflow-hidden">
             {/* Step Number */}
-            <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full glass-card flex items-center justify-center font-bold text-xl gradient-text neon-glow z-10">
+            <div className="absolute top-2 right-2 w-10 h-10 rounded-full glass-card flex items-center justify-center font-bold text-lg gradient-text neon-glow z-10">
                 {number}
             </div>
 
@@ -167,6 +168,7 @@ function StepCard({ icon, title, description, color, features, number }) {
             {/* Hover Glow Effect */}
             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl pointer-events-none"
                 style={{ background: `linear-gradient(135deg, ${color})` }} />
+            <Meteors number={8} />
         </div>
     );
 }

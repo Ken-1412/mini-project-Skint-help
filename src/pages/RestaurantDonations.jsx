@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Package, MapPin, Clock, TrendingUp, CheckCircle, AlertCircle, Calendar, Filter, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Package, MapPin, Clock, TrendingUp, CheckCircle, AlertCircle, Calendar, Filter, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatsSkeleton, CardSkeleton } from '@/components/ui/skeleton-loaders';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -11,6 +12,7 @@ import { useConfetti } from '@/hooks/useConfetti';
 
 export default function RestaurantDonations() {
     const { profile } = useAuth();
+    const navigate = useNavigate();
     const confetti = useConfetti();
     const [donations, setDonations] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -98,6 +100,14 @@ export default function RestaurantDonations() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-12"
                 >
+                    <Button
+                        onClick={() => navigate('/restaurant/dashboard')}
+                        variant="ghost"
+                        className="mb-4 text-muted-foreground hover:text-foreground"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Dashboard
+                    </Button>
                     <h1 className="text-4xl md:text-6xl font-bold mb-4">
                         My <span className="gradient-text">Donations</span>
                     </h1>

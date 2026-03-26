@@ -3,6 +3,7 @@ import { ArrowRight, ForkKnife, UsersThree, MapPin, TrendUp } from "@phosphor-ic
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useEffect, useState, memo } from 'react';
+import { Meteors } from '@/components/ui/meteors';
 
 const HeroSection = memo(function HeroSection() {
     const [count, setCount] = useState(0);
@@ -91,17 +92,20 @@ const HeroSection = memo(function HeroSection() {
                             transition={{ delay: 0.5 }}
                             className="grid grid-cols-3 gap-4 md:gap-6"
                         >
-                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300">
-                                <div className="text-3xl font-bold gradient-text">{count.toLocaleString()}+</div>
-                                <div className="text-sm text-muted-foreground mt-1">Meals Saved</div>
+                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300 relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">{count.toLocaleString()}+</div>
+                                <div className="text-sm text-muted-foreground mt-1 relative z-10">Meals Saved</div>
+                                <Meteors number={6} />
                             </div>
-                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300">
-                                <div className="text-3xl font-bold gradient-text">500+</div>
-                                <div className="text-sm text-muted-foreground mt-1">Restaurants</div>
+                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300 relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">500+</div>
+                                <div className="text-sm text-muted-foreground mt-1 relative z-10">Restaurants</div>
+                                <Meteors number={6} />
                             </div>
-                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300">
-                                <div className="text-3xl font-bold gradient-text">1000+</div>
-                                <div className="text-sm text-muted-foreground mt-1">Volunteers</div>
+                            <div className="glass-card p-4 md:p-5 rounded-xl text-center soft-glow-hover transition-all duration-300 relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">1000+</div>
+                                <div className="text-sm text-muted-foreground mt-1 relative z-10">Volunteers</div>
+                                <Meteors number={6} />
                             </div>
                         </motion.div>
 
@@ -221,7 +225,7 @@ const PipelineNode = memo(function PipelineNode({ icon, title, description, colo
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay }}
-            className={`depth-card p-6 max-w-xs ${className}`}
+            className={`depth-card p-6 max-w-xs overflow-hidden ${className}`}
         >
             <div className="flex items-start gap-4">
                 <motion.div
@@ -236,6 +240,7 @@ const PipelineNode = memo(function PipelineNode({ icon, title, description, colo
                     <p className="text-sm text-muted-foreground">{description}</p>
                 </div>
             </div>
+            <Meteors number={8} />
         </motion.div>
     );
 });

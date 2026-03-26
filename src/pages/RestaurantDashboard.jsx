@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, TrendingUp, Clock, CheckCircle, AlertCircle, MapPin, Utensils, Plus, ArrowRight, BarChart3 } from 'lucide-react';
+import { Package, TrendingUp, Clock, CheckCircle, AlertCircle, MapPin, Utensils, Plus, ArrowRight, ArrowLeft, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ElectricBorder from '@/components/ui/ElectricBorder';
 import { logger } from '@/lib/logger';
@@ -14,6 +14,7 @@ import { useConfetti } from '@/hooks/useConfetti';
 
 export default function RestaurantDashboard() {
     const { profile } = useAuth();
+    const navigate = useNavigate();
     const confetti = useConfetti();
     const [selectedCenter, setSelectedCenter] = useState('');
     const [quantity, setQuantity] = useState('');
@@ -255,6 +256,14 @@ export default function RestaurantDashboard() {
             <div className="absolute inset-0 animated-gradient opacity-20" />
 
             <div className="container mx-auto px-4 relative z-10">
+                <Button
+                    onClick={() => navigate('/')}
+                    variant="ghost"
+                    className="mb-4 text-muted-foreground hover:text-foreground"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Home
+                </Button>
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

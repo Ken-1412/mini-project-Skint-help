@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Sparkle } from "@phosphor-icons/react";
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Meteors } from '@/components/ui/meteors';
 
 export function CtaSection() {
     return (
@@ -35,6 +36,7 @@ export function CtaSection() {
                             className="flex justify-center mb-6"
                         >
                             <motion.div
+                                initial={{ rotate: 0 }}
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                                 className="w-20 h-20 rounded-2xl glass-card flex items-center justify-center neon-glow"
@@ -74,17 +76,20 @@ export function CtaSection() {
                             transition={{ delay: 0.5 }}
                             className="grid grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto"
                         >
-                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift">
-                                <div className="text-3xl font-bold gradient-text">50K+</div>
-                                <div className="text-sm text-muted-foreground">Meals Saved</div>
+                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">50K+</div>
+                                <div className="text-sm text-muted-foreground relative z-10">Meals Saved</div>
+                                <Meteors number={6} />
                             </div>
-                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift">
-                                <div className="text-3xl font-bold gradient-text">500+</div>
-                                <div className="text-sm text-muted-foreground">Partners</div>
+                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">500+</div>
+                                <div className="text-sm text-muted-foreground relative z-10">Partners</div>
+                                <Meteors number={6} />
                             </div>
-                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift">
-                                <div className="text-3xl font-bold gradient-text">25</div>
-                                <div className="text-sm text-muted-foreground">Cities</div>
+                            <div className="glass-card p-4 rounded-xl soft-glow-hover transition-all duration-300 hover-lift relative overflow-hidden">
+                                <div className="text-3xl font-bold gradient-text relative z-10">25</div>
+                                <div className="text-sm text-muted-foreground relative z-10">Cities</div>
+                                <Meteors number={6} />
                             </div>
                         </motion.div>
 

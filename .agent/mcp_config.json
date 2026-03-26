@@ -1,0 +1,36 @@
+{
+    "mcpServers": {
+        "context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp",
+                "--api-key",
+                "YOUR_API_KEY"
+            ]
+        },
+        "shadcn": {
+            "command": "npx",
+            "args": [
+                "shadcn@latest",
+                "mcp"
+            ]
+        },
+        "stitch": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@_davideast/stitch-mcp",
+                "proxy"
+            ],
+            "env": {
+                "STITCH_API_KEY": "AQ.Ab8RN6Jn0tV8AwT0sFUUn_WSujhGeS9Kcg5PgtFBBdZDNJQhHw",
+                "GOOGLE_CLOUD_PROJECT": "skint help"
+            }
+        }
+        //other mcp servers
+    }
+}
+
+// setup mcp server in  ~/.gemini\antigravity\mcp_config.json
+

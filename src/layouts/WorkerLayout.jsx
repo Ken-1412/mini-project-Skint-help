@@ -1,25 +1,60 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { Briefcase, LogOut, LayoutDashboard, Truck, Check } from "lucide-react";
+import { Link, useLocation, Navigate } from "react-router-dom";
+import { Briefcase, SignOut, SquaresFour, Truck, CheckCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSignOut } from "@/hooks/useSignOut";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import { usePresence } from "@/hooks/usePresence";
+import { AnimatedOutlet } from "@/components/AnimatedOutlet";
 
 export function WorkerLayout() {
     const location = useLocation();
-    const { profile } = useAuth();
+    const { user, profile, loading, isSigningOut } = useAuth();
     const handleSignOut = useSignOut();
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
     // Track presence (online/offline status)
     usePresence();
 
+    // During sign-out, show nothing — navigation is already in progress
+    if (isSigningOut) {
+        return null;
+    }
+
+    // Still loading auth — show spinner
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Not authenticated at all — redirect to select-role
+    if (!user) {
+        return <Navigate to="/select-role" replace />;
+    }
+
+    // User exists but profile still loading — show spinner (don't redirect!)
+    if (!profile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading profile...</p>
+                </div>
+            </div>
+        );
+    }
+
     const sidebarLinks = [
-        { icon: LayoutDashboard, label: "Dashboard", path: "/worker/dashboard" },
+        { icon: SquaresFour, label: "Dashboard", path: "/worker/dashboard" },
         { icon: Truck, label: "Pickups", path: "/worker/pickups" },
-        { icon: Check, label: "Distributions", path: "/worker/distributions" },
+        { icon: CheckCircle, label: "Distributions", path: "/worker/distributions" },
     ];
 
     return (
@@ -78,7 +113,7 @@ export function WorkerLayout() {
                         className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-300"
                         onClick={() => setShowSignOutDialog(true)}
                     >
-                        <LogOut className="w-5 h-5 mr-3" />
+                        <SignOut className="w-5 h-5 mr-3" />
                         Sign Out
                     </Button>
                 </div>
@@ -86,7 +121,7 @@ export function WorkerLayout() {
 
             {/* Main Content */}
             <main className="flex-1 ml-64 relative z-10">
-                <Outlet />
+                <AnimatedOutlet />
             </main>
 
             {/* Sign Out Confirmation Dialog */}
@@ -99,7 +134,7 @@ export function WorkerLayout() {
                 confirmText="Sign Out"
                 cancelText="Cancel"
                 variant="destructive"
-                icon={<LogOut className="w-8 h-8" />}
+                icon={<SignOut className="w-8 h-8" />}
             />
         </div>
     );

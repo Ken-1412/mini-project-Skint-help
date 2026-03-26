@@ -3,6 +3,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Utensils, Users, MapPin, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Meteors } from '@/components/ui/meteors';
 import { useState } from 'react';
 
 export default function JoinUs() {
@@ -210,21 +211,21 @@ function RoleCard({ icon, title, description, color, benefits, isSelected, onSel
             onClick={onSelect}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`depth-card p-6 h-full text-left transition-all ${isSelected ? 'ring-2 ring-green-500 neon-glow' : ''
+            className={`depth-card p-6 h-full text-left transition-all relative overflow-hidden ${isSelected ? 'ring-2 ring-green-500 neon-glow' : ''
                 }`}
         >
             <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4 neon-glow`}
+                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4 neon-glow relative z-10`}
             >
                 {icon}
             </motion.div>
 
-            <h3 className="text-2xl font-bold mb-2">{title}</h3>
-            <p className="text-muted-foreground mb-4 text-sm">{description}</p>
+            <h3 className="text-2xl font-bold mb-2 relative z-10">{title}</h3>
+            <p className="text-muted-foreground mb-4 text-sm relative z-10">{description}</p>
 
-            <ul className="space-y-2">
+            <ul className="space-y-2 relative z-10">
                 {benefits.map((benefit, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
@@ -237,11 +238,12 @@ function RoleCard({ icon, title, description, color, benefits, isSelected, onSel
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mt-4 pt-4 border-t border-white/10"
+                    className="mt-4 pt-4 border-t border-white/10 relative z-10"
                 >
                     <span className="text-sm font-medium text-green-400">✓ Selected</span>
                 </motion.div>
             )}
+            <Meteors number={8} />
         </motion.button>
     );
 }
